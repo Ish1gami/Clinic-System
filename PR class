@@ -1,0 +1,75 @@
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class PatientRepository {
+    private final List<Patient> patients = new ArrayList<>();
+    private final String fileName;
+
+    public PatientRepository(String fileName) {
+        this.fileName = fileName;
+        loadFromFile();
+    }
+
+    public List<Patient> getAllPatients() {
+        return new ArrayList<>(patients);
+    }
+
+    public void addPatient(Patient patient) {
+        patients.add(patient);
+        saveToFile();
+    }
+
+    public void updatePatient(int index, Patient patient) {
+        if (index >= 0 && index < patients.size()) {
+            patients.set(index, patient);
+            saveToFile();
+        }
+    }
+
+    public void deletePatient(int index) {
+        if (index >= 0 && index < patients.size()) {
+            patients.remove(index);
+            saveToFile();
+        }
+    }
+
+    public int generateNextId() {
+        int maxId = 0;
+        for (Patient p : patients) {
+            try {
+                int id = Integer.parseInt(p.getId());
+                if (id > maxId) maxId = id;
+            } catch (NumberFormatException ignored) {}
+        }
+        return maxId + 1;
+    }
+
+    private void saveToFile() {
+        try (PrintWriter writer = new PrintWriter(new FileWriter(fileName))) {
+            for (Patient p : patients) {
+                writer.println(p.toFileFormat());
+            }
+        } catch (IOException e) {
+            System.err.println("Error saving records: " + e.getMessage());
+        }
+    }
+
+    private void loadFromFile() {
+        File file = new File(fileName);
+        if (!file.exists()) return;
+
+        patients.clear();
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                Patient p = Patient.fromFileFormat(line);
+                if (p != null) {
+                    patients.add(p);
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Error loading records: " + e.getMessage());
+        }
+    }
+}
